@@ -1,30 +1,28 @@
 module Exercise
   module Fp2
     class MyArray < Array
-      def my_each
-        index = 0
-        while index < length
-          yield self[index]
-          index += 1
-        end
+      def my_each(&func)
+        head, *tail = self
+        func.call(head)
+        rest = MyArray.new(tail)
+        rest.my_each(&func) if tail.any?
         self
       end
 
       def my_map
-        result = MyArray.new
-        my_each { |el| result << yield(el) }
-        result
+        my_reduce(MyArray.new) { |acc, el| acc << yield(el) }
       end
 
       def my_compact
-        result = MyArray.new
-        my_each { |el| result << el unless el.nil? }
-        result
+        my_reduce(MyArray.new) { |acc, el| el.nil? ? acc : acc << el }
       end
 
-      def my_reduce(acc = nil)
-        my_each { |el| acc = acc.nil? ? el : yield(acc, el) }
-        acc
+      def my_reduce(acc = nil, &func)
+        head, *tail = self
+        acc = acc.nil? ? head : func.call(acc, head)
+        return acc if tail.empty?
+
+        MyArray.new(tail).my_reduce(acc, &func)
       end
     end
   end
